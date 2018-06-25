@@ -1,0 +1,78 @@
+[
+  {
+    "name": "redis",
+    "image": "redis",
+    "portMappings": [
+      {
+        "containerPort": 6379,
+        "hostPort": 6379,
+        "protocol": "tcp"
+      }
+    ],
+    "environment": [],
+    "memory": ${memory},
+    "networkMode": "awsvpc",
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${log_group}",
+        "awslogs-region": "${log_region}",
+        "awslogs-stream-prefix": "web"
+      }
+    }
+  },
+  {
+    "name": "celery",
+    "image": "${celery_image}",
+    "portMappings": [
+      {
+        "containerPort": 55555,
+        "hostPort": 55555,
+        "protocol": "tcp"
+      }
+    ],
+    "environment": [
+      {"name": "CELERY_BROKER_URL",
+       "value": "redis://localhost:6379/0"},
+      {"name": "CELERY_RESULT_BACKEND",
+       "value": "redis://localhost:6379/0"}
+    ],
+    "memory": ${memory},
+    "networkMode": "awsvpc",
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${log_group}",
+        "awslogs-region": "${log_region}",
+        "awslogs-stream-prefix": "web"
+      }
+    }
+  },
+  {
+    "name": "flask",
+    "image": "${flask_image}",
+    "portMappings": [
+      {
+        "containerPort": 5050,
+        "hostPort": 5050,
+        "protocol": "tcp"
+      }
+    ],
+    "environment": [
+      {"name": "CELERY_BROKER_URL",
+       "value": "redis://localhost:6379/0"},
+      {"name": "CELERY_RESULT_BACKEND",
+       "value": "redis://localhost:6379/0"}
+    ],
+    "memory": ${memory},
+    "networkMode": "awsvpc",
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${log_group}",
+        "awslogs-region": "${log_region}",
+        "awslogs-stream-prefix": "web"
+      }
+    }
+  }
+]
