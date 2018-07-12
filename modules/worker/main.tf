@@ -247,17 +247,13 @@ resource "aws_lb_listener" "public_http" {
 }
 
 /* Route53 hosted zone */
-resource "aws_route53_zone" "api" {
-  name = "${var.environment == "production" ? "" : "${var.environment}."}${var.api_hostname}"
-
-  lifecycle {
-    prevent_destroy = true
-  }
+data "aws_route53_zone" "api" {
+  name = "${var.api_hostname}"
 }
 
 resource "aws_route53_record" "lb" {
-  zone_id = "${aws_route53_zone.api.zone_id}"
-  name    = "${aws_route53_zone.api.name}"
+  zone_id = "${data.aws_route53_zone.api.zone_id}"
+  name    = "${var.environment == "production" ? "" : "${var.environment}."}${var.api_hostname}"
   type    = "A"
 
   alias {
