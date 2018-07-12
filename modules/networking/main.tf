@@ -3,7 +3,7 @@ data "aws_availability_zones" "available" {}
 
 /* The VPC */
 resource "aws_vpc" "vpc" {
-  cidr_block           = "${var.vpc_cidr}"
+  cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -25,14 +25,15 @@ resource "aws_internet_gateway" "ig" {
 }
 
 /* Public subnet */
-resource "aws_subnet" "public_subnet" {
+resource "aws_subnet" "public" {
   vpc_id                  = "${aws_vpc.vpc.id}"
-  cidr_block              = "${cidrsubnet(var.vpc_cidr, 8, 1)}"
-  availability_zone       = "${data.aws_availability_zones.available.names[0]}"
+  cidr_block              = "${cidrsubnet(aws_vpc.vpc.cidr_block, 8, count.index+1)}"
+  count                   = 2
+  availability_zone       = "${data.aws_availability_zones.available.names[count.index]}"
   map_public_ip_on_launch = true
 
   tags {
-    Name        = "${var.environment}-${data.aws_availability_zones.available.names[0]}-public-subnet"
+    Name        = "${var.environment}-${data.aws_availability_zones.available.names[count.index]}-public-subnet"
     Environment = "${var.environment}"
   }
 }
@@ -55,25 +56,7 @@ resource "aws_route" "public_internet_gateway" {
 
 /* Route table associations */
 resource "aws_route_table_association" "public" {
-  subnet_id      = "${aws_subnet.public_subnet.id}"
+  count          = "${aws_subnet.public.count}"
+  subnet_id      = "${aws_subnet.public.*.id[count.index]}"
   route_table_id = "${aws_route_table.public.id}"
-}
-
-/* VPC's Default Security Group */
-resource "aws_security_group" "default" {
-  name        = "${var.environment}-default-sg"
-  description = "Default security group to allow all outbound"
-  vpc_id      = "${aws_vpc.vpc.id}"
-  depends_on  = ["aws_vpc.vpc"]
-
-  egress {
-    from_port = "0"
-    to_port   = "0"
-    protocol  = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags {
-    Environment = "${var.environment}"
-  }
 }
